@@ -108,7 +108,9 @@ func (c *HTTPCmd) Run(meta *registry.Meta) (res interface{}, err error) {
 			return nil, errors.WithMessage(err, "parse ca")
 		} else {
 			pool := x509.NewCertPool()
-			pool.AppendCertsFromPEM([]byte(caCrt))
+			if !pool.AppendCertsFromPEM([]byte(caCrt)) {
+				return nil, errors.New("parse ca: no valid PEM certificate found")
+			}
 			tr.TLSClientConfig.RootCAs = pool
 		}
 

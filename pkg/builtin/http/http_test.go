@@ -223,6 +223,18 @@ url: "https://127.0.0.1:8443/api/v1/token?val=test-token"`)
 	assert.Equal(t, "{\"token\":\"test-token\"}", body)
 }
 
+func TestHTTPSRunWithInvalidCA(t *testing.T) {
+	for _, ca := range []string{"", "not a certificate"} {
+		reqInst := cuecontext.New().CompileString(`method: "GET"
+url: "https://127.0.0.1:8443/api/v1/token?val=test-token"`)
+		reqInst = reqInst.FillPath(value.FieldPath("tls_config", "ca"), ca)
+
+		runner, _ := newHTTPCmd(cue.Value{})
+		_, err := runner.Run(&registry.Meta{Obj: reqInst.Value()})
+		assert.ErrorContains(t, err, "parse ca: no valid PEM certificate found", "ca %q", ca)
+	}
+}
+
 // NewMock mock the http server
 func NewMock() *httptest.Server {
 	ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
